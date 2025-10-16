@@ -1,0 +1,12 @@
+_commit: 27a2778
+_src_path: gh:ChuckieChen945/substrate
+author_email: chuckie_chen@outlook.com
+author_name: Chuckie Chen
+project_description: personal workflow
+project_name: cc_workflow
+project_type: package
+project_url: https://https://github.com/ChuckieChen945/cc_workflow
+python_version: '3.10'
+typing: strict
+with_conventional_commits: true
+with_typer_cli: false
