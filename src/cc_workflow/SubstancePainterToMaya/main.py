@@ -36,27 +36,29 @@
 # Read the README.md file provided with the script
 #
 # call script with the following python code:
-'''
+"""
 
 from SubstancePainterToMaya import main
 from importlib import reload
 reload(main)
 main.SPtoM()
 
-'''
+"""
 ##############################################
 
 # Libraries
 import os
-from pathlib import Path
 import shutil
-import ufe
+from importlib import reload
+from pathlib import Path
+
 import maya.cmds as mc
 import maya.OpenMaya as om
-import maya.mel as mel
+import ufe
+from maya import mel
 from SubstancePainterToMaya import UI as ui
 from SubstancePainterToMaya import helper
-from importlib import reload
+
 reload(ui)
 reload(helper)
 
@@ -81,45 +83,46 @@ toolUI.launchButton.clicked.connect(lambda: launch(toolUI))
 #
 ###################################
 
+
 class rendererObject:
+    def __init__(self) -> None:
+        self.name = "Arnold"
 
-    def __init__(self):
-        self.name = 'Arnold'
-
-    def define(self):
-
+    def define(self) -> None:
         # Check for the render engine and load config file
         if self.ui.grpRadioRenderer.checkedId() == -2:
             from SubstancePainterToMaya import config_mtoa as config
+
             reload(config)
-            self.name = 'Arnold'
-            print ('Arnold')
+            self.name = "Arnold"
+            print("Arnold")
 
         elif self.ui.grpRadioRenderer.checkedId() == -3:
             from SubstancePainterToMaya import config_ue as config
+
             reload(config)
-            self.name = 'Unreal_FBX'
-            print ('Unreal_FBX')
+            self.name = "Unreal_FBX"
+            print("Unreal_FBX")
 
         elif self.ui.grpRadioRenderer.checkedId() == -4:
             from SubstancePainterToMaya import config_mtoa as config
+
             reload(config)
-            self.name = 'MaterialX'
-            print ('MaterialX')
+            self.name = "MaterialX"
+            print("MaterialX")
 
         self.renderParameters = config.config()
 
 
 def SPtoM():
-
     # Create the UI
     toolUI = ui.PainterToMayaUI()
     toolUI.createUI()
     toolUI.launchButton.clicked.connect(lambda: launch(toolUI))
 
-def launch(ui):
 
-    print('\n LAUNCH \n')
+def launch(ui):
+    print("\n LAUNCH \n")
 
     allTextures = []
 
@@ -150,50 +153,52 @@ def launch(ui):
 
     # Display second part of the UI
     ui = helper.displaySecondPartOfUI(ui, renderer)
-    
+
     # Ensure uiElements are not garbage collected
     uiElementsRef = uiElements.copy()  # Line 151
 
     # Add connect to the proceed button
     ui.proceedButton.clicked.connect(lambda: proceed(ui, foundTextures, renderer, uiElements))
-    
+
     # Speed tests profiling
-    #ui.proceedButton.clicked.connect(lambda: profile_proceed(ui, foundTextures, renderer, uiElements))
+    # ui.proceedButton.clicked.connect(lambda: profile_proceed(ui, foundTextures, renderer, uiElements))
+
 
 def profile_proceed(ui, foundTextures, renderer, uiElements):
     profiler = cProfile.Profile()
     profiler.enable()
     proceed(ui, foundTextures, renderer, uiElements)
     profiler.disable()
-    
-    # Print profiling results
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats()
-    
-def proceed(ui, foundTextures, renderer, uiElements):
 
-    print('\n PROCEED \n')
-    
-    #print(f"Debug: uiElements before proceeding: {uiElements}")  
+    # Print profiling results
+    stats = pstats.Stats(profiler).sort_stats("cumtime")
+    stats.print_stats()
+
+
+def proceed(ui, foundTextures, renderer, uiElements):
+    print("\n PROCEED \n")
+
+    # print(f"Debug: uiElements before proceeding: {uiElements}")
 
     # Import render definitions
-    if renderer.name == 'Arnold':
+    if renderer.name == "Arnold":
         from SubstancePainterToMaya import helper_arnold as render_helper
-        reload(render_helper)
-#        subdivisions = ui.checkbox5.isChecked()
-        subdivisions = False
-        
-    elif renderer.name == 'MaterialX':
-        from SubstancePainterToMaya import helper_materialX as render_helper
-        reload(render_helper)
-        subdivisions = False
-        
-    elif renderer.name == 'Unreal_FBX' or 'Unreal_ABC':
-        from SubstancePainterToMaya import helper_unreal as render_helper
-        reload(render_helper)
-        subdivisions = False
-        
 
+        reload(render_helper)
+        #        subdivisions = ui.checkbox5.isChecked()
+        subdivisions = False
+
+    elif renderer.name == "MaterialX":
+        from SubstancePainterToMaya import helper_materialX as render_helper
+
+        reload(render_helper)
+        subdivisions = False
+
+    elif renderer.name == "Unreal_FBX" or "Unreal_ABC":
+        from SubstancePainterToMaya import helper_unreal as render_helper
+
+        reload(render_helper)
+        subdivisions = False
 
     UDIMs = False
 
@@ -202,74 +207,70 @@ def proceed(ui, foundTextures, renderer, uiElements):
 
     # Get the textures to use
     texturesToUse = helper.getTexturesToUse(renderer, foundTextures, uiElements)
-    
-    
+
     # materialX option selected
-    if renderer.name == 'MaterialX':
-    
+    if renderer.name == "MaterialX":
         # Location of materialX template doc (in parent script directory)
         script_path: Path = Path(__file__).parent.resolve()
         mtlxStarter = "MaterialX_basicGrp.mtlx"
         mtlxBasic = mtlxStarter
- 
+
         # create materialX stack for scene
-        stackShapeName = mc.createNode( 'materialxStack' )
-        stackShapePath = mel.eval('ls -l {}'.format(stackShapeName))[0]
+        stackShapeName = mc.createNode("materialxStack")
+        stackShapePath = mel.eval(f"ls -l {stackShapeName}")[0]
         stackShapeItem = ufe.Hierarchy.createItem(ufe.PathString.path(stackShapePath))
         contextOps = ufe.ContextOps.contextOps(stackShapeItem)
 
-
         # Get list of materials
         materials = list()
-    
+
         for texture in texturesToUse:
-            
-            #print(f'texture.textureSet: {texture.textureSet}')
+            # print(f'texture.textureSet: {texture.textureSet}')
             # check that material exists
             if not mc.objExists(texture.textureSet):
-                print(f'Warning: Material {texture.textureSet} does not exist. Check that the material name corresponds to the texture name.')
+                print(
+                    f"Warning: Material {texture.textureSet} does not exist. Check that the material name corresponds to the texture name.",
+                )
                 continue
-                
+
             if texture.textureSet not in materials:
                 materials.append(texture.textureSet)
-                
-                # create materialX docs        
-        for material in materials:        
-            
+
+                # create materialX docs
+        for material in materials:
             # Create doc
-            render_helper.mtlxImportDoc (material, stackShapePath)
-            
+            render_helper.mtlxImportDoc(material, stackShapePath)
+
         # populate texture map filepaths in mtlx docs
         for texture in texturesToUse:
-        
             if not mc.objExists(texture.textureSet):
                 continue
-            
+
             # clean files (if option is selected)
-            texture.materialAttribute = renderer.renderParameters.MAP_LIST_REAL_ATTRIBUTES[texture.indice]
+            texture.materialAttribute = renderer.renderParameters.MAP_LIST_REAL_ATTRIBUTES[
+                texture.indice
+            ]
             clean = ui.checkboxRem.isChecked()
             flatX = ui.checkboxFlatX.isChecked()
 
             # Connect MaterialX nodes
-            render_helper.mtlxConnect (texture, clean, flatX, stackShapePath)
-            
-            # Assign MaterialX shaders
-            render_helper.mtlxAssignMaterial (texture, stackShapePath)
-         
-        
-    else:
-    
-         # Connect main textures
-        for texture in texturesToUse:
+            render_helper.mtlxConnect(texture, clean, flatX, stackShapePath)
 
-            texture.materialAttribute = renderer.renderParameters.MAP_LIST_REAL_ATTRIBUTES[texture.indice]
-   
+            # Assign MaterialX shaders
+            render_helper.mtlxAssignMaterial(texture, stackShapePath)
+
+    else:
+        # Connect main textures
+        for texture in texturesToUse:
+            texture.materialAttribute = renderer.renderParameters.MAP_LIST_REAL_ATTRIBUTES[
+                texture.indice
+            ]
+
             # Defer creation of layer texture maps
             mixNode = renderer.renderParameters.MIX_NODE
             if texture.materialAttribute != mixNode:
-
                 # Create file node and 2dPlacer
-                if renderer.name == 'Unreal_FBX':
+                if renderer.name == "Unreal_FBX":
                     fileNode = helper.createFileNode(texture, UDIMs)
                 else:
                     fileNode = helper.createFileNode_Ai(texture, UDIMs)
@@ -287,21 +288,20 @@ def proceed(ui, foundTextures, renderer, uiElements):
             if subdivisions == True:
                 render_helper.addSubdivisions(ui, texture)
 
-        #ABC option:
-        if renderer.name == 'Unreal_ABC':
-
-            shaderGroups = mc.listConnections (texture.textureSet + '.outColor', d=True, s=False)
+        # ABC option:
+        if renderer.name == "Unreal_ABC":
+            shaderGroups = mc.listConnections(texture.textureSet + ".outColor", d=True, s=False)
 
             for texture in texturesToUse:
-
-                if mc.objExists(texture.textureSet) and not mc.objExists(texture.textureSet + '_mtl'):
-
+                if mc.objExists(texture.textureSet) and not mc.objExists(
+                    texture.textureSet + "_mtl",
+                ):
                     # Rename the material.
                     materialName_orig = texture.textureSet
-                    materialName_new = mc.rename(texture.textureSet, texture.textureSet + '_mtl')
+                    materialName_new = mc.rename(texture.textureSet, texture.textureSet + "_mtl")
 
-                    SG = mc.listConnections (materialName_new + '.outColor', d=True, s=False)
-                    if SG != materialName_orig:
+                    SG = mc.listConnections(materialName_new + ".outColor", d=True, s=False)
+                    if materialName_orig != SG:
                         SG_new = mc.rename(SG, materialName_orig)
 
         # Connect optional layer network
@@ -309,18 +309,13 @@ def proceed(ui, foundTextures, renderer, uiElements):
 
         for texture in texturesToUse:
             if useLyr and texture.materialAttribute == mixNode:
-
                 # create the layer file node
                 fileNode = helper.createFileNode(texture, UDIMs)
                 # assemble the layer network
                 render_helper.createLayerNetwork(texture, renderer, fileNode)
 
-        #delete unused nodes
-#           if ui.grpRadioMaterials.checkedId() == -4:
-#               mel.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
+        # delete unused nodes
+    #           if ui.grpRadioMaterials.checkedId() == -4:
+    #               mel.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
 
-
-    print('\n FINISHED \n')
-
-
-
+    print("\n FINISHED \n")
