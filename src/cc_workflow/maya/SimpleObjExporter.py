@@ -53,8 +53,9 @@ class SimpleObjExporter:
             obj
             for obj in cmds.ls(type="transform")
             if any(
-                cmds.nodeType(s) == "mesh"
-                for s in cmds.listRelatives(obj, s=True) or []
+                (cmds.nodeType(s) == "mesh")
+                for s in (cmds.listRelatives(obj, s=True, fullPath=True) or [])
+                if cmds.objExists(s)
             )
         ]
         meshes = [cmds.ls(obj, long=True)[0] for obj in meshes]
