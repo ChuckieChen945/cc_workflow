@@ -2,52 +2,37 @@ from pathlib import Path
 
 import hou
 
+# 根目录：.hip 所在路径/../obj
 hip_dir = Path(hou.hipFile.path()).parent.parent
 root_folder = (hip_dir / "obj").resolve()
-lopnet = hou.pwd().parent()
 
-# 删除旧节点
-for child in lopnet.children():
-    if child.name().startswith("imp_"):
+
+# 清空已有子节点
+parent = hou.pwd().parent()
+for child in parent.children():
+    if child.name().startswith("import_"):
         child.destroy()
 
+# 遍历 obj 文件
+obj_folders = [f for f in root_folder.iterdir() if f.is_dir()]
+obj_files = []
+for folder in obj_folders:
+    obj_files.extend(folder.glob("*.obj"))
 
-def find_sop_out_nodes(node):
-    """递归查找所有名字以 'out_' 开头的 SOP null 节点"""
-    out_nodes = []
-    for child in node.children():
-        if child.type().name() == "null" and child.name().startswith("out_"):
-            out_nodes.append(child)
-        out_nodes.extend(find_sop_out_nodes(child))
-    return out_nodes
+for path in obj_files:
+    # 在 Houdini 中用相对路径表示层级
+    rel_path = path.relative_to(root_folder)
+    # 替换路径分隔符为下划线创建节点名
+    name = "import_" + "_".join(rel_path.with_suffix("").parts)
 
+    node = parent.createNode("create_assets", name)
+    node.parm("file_path").set(str(path))
 
-# 找到 SOP 输出节点
-sop_out_nodes = find_sop_out_nodes(hou.node("/obj"))
+    out_null = parent.createNode(
+        "null",
+        "out_" + "_".join(rel_path.with_suffix("").parts),
+    )
+    out_null.setInput(0, node)
+    out_null.moveToGoodPosition()
 
-for sop_null in sop_out_nodes:
-    # 从 null 节点名字还原层级
-    rel_name_parts = sop_null.name()[4:].split("_")  # 去掉 "out_"
-    primpath = "/World/" + "/".join(rel_name_parts)
-
-    # 创建 SOP Import LOP
-    imp = lopnet.createNode("sopimport", "imp_" + "_".join(rel_name_parts))
-    # TODO: 勾选 “Load as reference”
-    imp.parm("soppath").set(sop_null.path())
-    imp.parm("primpath").set(primpath)
-
-    # 设置 layer save path
-    layer_path = (hip_dir / "outputs" / ("/".join(rel_name_parts) + ".usd")).as_posix()
-    # imp.parm("filepath").set(layer_path)
-
-    # 创建材质节点
-    mat = lopnet.createNode("materiallibrary", "mat_" + "_".join(rel_name_parts))
-    mat.setNextInput(imp)
-
-
-# 可选：创建 merge (sublayer LOP)
-merge = lopnet.createNode("sublayer", "merge_all")
-for n in lopnet.children():
-    if n.name().startswith("imp_"):
-        merge.setNextInput(n)
-merge.moveToGoodPosition()
+parent.layoutChildren()
