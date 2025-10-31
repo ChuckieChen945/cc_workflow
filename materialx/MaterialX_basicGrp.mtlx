@@ -1,64 +1,44 @@
 <?xml version="1.0"?>
-<materialx version="1.38">
-  <!-- Basic material network template by Derek Flood -->
-  
-  <surfacematerial name="MatName_SG" type="material" nodedef="ND_surfacematerial">
-    <input name="surfaceshader" type="surfaceshader" nodename="MatName_mtl" />
+<materialx version="1.38" xpos="0.0555556" ypos="0.0555556">
+  <surfacematerial name="MatName_SG" type="material" nodedef="ND_surfacematerial" xpos="6.49239" ypos="0.387234">
+    <input name="surfaceshader" type="surfaceshader" nodename="MatName_mtl2" />
   </surfacematerial>
-  
-  <!-- Standard Surface with better defaults -->
-  <standard_surface name="MatName_mtl" type="surfaceshader" nodedef="ND_standard_surface_surfaceshader">
-    <input name="base_color" type="color3" output="outColor" nodegraph="MatName_nodes" />
-    <input name="base" type="float" value="0.8" />
-    <input name="specular" type="float" value="0.5" />
-    <input name="subsurface_radius" type="color3" value="0.2258, 0.0258, 0.0076" />
-    <input name="subsurface_anisotropy" type="float" value="0.8" />
-    <input name="subsurface_scale" type="float" value="0.1" />
-    <input name="subsurface" type="float" value="0" />
-    <input name="specular_roughness" type="float" output="outRoughness" nodegraph="MatName_nodes" />
-    <input name="coat_normal" type="vector3" output="outNormal" nodegraph="MatName_nodes" />
-    <input name="normal" type="vector3" output="outNormal" nodegraph="MatName_nodes" />
-    <input name="subsurface_color" type="color3" output="outColor" nodegraph="MatName_nodes" />
-    <input name="metalness" type="float" output="outMetal" nodegraph="MatName_nodes" />
-  </standard_surface>
-  
-  <!-- Group Compound for shader network nodes -->
-  <nodegraph name="MatName_nodes">
+  <nodegraph name="MatName_nodes" xpos="-0.0207389" ypos="0.146413" Autodesk-ldx_inputPos="-668.308 -89.9996" Autodesk-ldx_outputPos="242.316 -137.453">
     <output name="outMetal" type="float" nodename="MatName_met" />
     <output name="outNormal" type="vector3" nodename="MatName_normalmap" />
     <output name="outColor" type="color3" nodename="MatName_dif" />
     <output name="outRoughness" type="float" nodename="MatName_roughness_lerp" />
-    
-    <image name="MatName_dif" type="color3" nodedef="ND_image_color3">
+    <image name="MatName_dif" type="color3" nodedef="ND_image_color3" xpos="-0.444444" ypos="0.666667">
       <input name="file" type="filename" colorspace="srgb_texture" value="" />
       <input name="default" type="color3" value="0.18, 0.18, 0.18" />
     </image>
-    
-    <image name="MatName_nor" type="vector3" nodedef="ND_image_vector3">
+    <image name="MatName_nor" type="vector3" nodedef="ND_image_vector3" xpos="-2.13889" ypos="-0.811111" Autodesk-previousTexturePath="__NO_TEXTURE_PATH__">
       <input name="file" type="filename" colorspace="Raw" value="" />
       <input name="default" type="vector3" value="0.5, 0.5, 1.0" />
     </image>
-    
-    <!-- Dual roughness sliders modulated by roughness mask -->
-    <mix name="MatName_roughness_lerp" type="float" nodedef="ND_mix_float">
+    <mix name="MatName_roughness_lerp" type="float" nodedef="ND_mix_float" xpos="-0.444444" ypos="2.95">
       <input name="fg" type="float" value="0.2" />
       <input name="bg" type="float" value="0.4" />
       <input name="mix" type="float" nodename="MatName_spc" ldx_value="0" />
     </mix>
-    
-    <normalmap name="MatName_normalmap" type="vector3" nodedef="ND_normalmap">
+    <normalmap name="MatName_normalmap" type="vector3" nodedef="ND_normalmap" xpos="-0.444444" ypos="-0.944444">
       <input name="in" type="vector3" nodename="MatName_nor" />
     </normalmap>
-    
-    <image name="MatName_met" type="float" nodedef="ND_image_float">
+    <image name="MatName_met" type="float" nodedef="ND_image_float" xpos="-0.444444" ypos="-3.22778">
       <input name="file" type="filename" value="" colorspace="Raw" />
-	  <input name="default" type="float" value="0" />
+      <input name="default" type="float" value="0" />
     </image>
-    
-    <image name="MatName_spc" type="float" nodedef="ND_image_float">
+    <image name="MatName_spc" type="float" nodedef="ND_image_float" xpos="-2.13889" ypos="3.35">
       <input name="file" type="filename" value="" colorspace="Raw" />
-	  <input name="default" type="float" value="0.2" />
+      <input name="default" type="float" value="0.2" />
     </image>
-    
   </nodegraph>
+  <open_pbr_surface name="MatName_mtl2" type="surfaceshader" nodedef="ND_open_pbr_surface_surfaceshader" xpos="3.62692" ypos="-0.40529">
+    <input name="base_metalness" type="float" output="outMetal" nodegraph="MatName_nodes" />
+    <input name="geometry_normal" type="vector3" output="outNormal" nodegraph="MatName_nodes" />
+    <input name="geometry_coat_normal" type="vector3" output="outNormal" nodegraph="MatName_nodes" />
+    <input name="base_color" type="color3" output="outColor" nodegraph="MatName_nodes" />
+    <input name="subsurface_color" type="color3" output="outColor" nodegraph="MatName_nodes" />
+    <input name="specular_roughness" type="float" output="outRoughness" nodegraph="MatName_nodes" />
+  </open_pbr_surface>
 </materialx>
